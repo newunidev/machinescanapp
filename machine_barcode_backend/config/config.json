@@ -1,0 +1,9 @@
+{
+  "development": {
+    "username": "root",
+    "password": "rootNu@123",
+    "database": "barcode_inventory",
+    "host": "localhost",
+    "dialect": "mysql"
+  } 
+}
