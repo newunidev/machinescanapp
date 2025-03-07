@@ -28,6 +28,8 @@ async function testConnection() {
 
 // Export the sequelize instance
 module.exports = sequelize;
+ 
+
 
 // Optionally, you can export the testConnection function as well if you want to explicitly test the database connection
 module.exports.testConnection = testConnection;

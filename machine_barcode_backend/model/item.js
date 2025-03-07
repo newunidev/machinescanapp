@@ -1,4 +1,4 @@
-const { DataTypes, Op } = require('sequelize');
+const { DataTypes, Op, STRING } = require('sequelize');
 const sequelize = require('../database'); // Adjust path based on your setup
 const Category = require('./category');   // Assuming Category model is in the same directory
 
@@ -26,6 +26,18 @@ const Item = sequelize.define('Item', {
     type: DataTypes.STRING(255),
     allowNull: false,
   },
+  box_no :{
+    type: DataTypes.STRING(255),
+    allowNull:true,
+  },
+  model_no:{
+    type:DataTypes.STRING(255),
+    allowNull:true,
+  },
+  motor_no:{
+    type:DataTypes.STRING(255),
+    allowNull:true,
+  },
   cat_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -33,6 +45,23 @@ const Item = sequelize.define('Item', {
       model: Category,  // Reference to the Category model
       key: 'cat_id'
     }
+  },
+  
+  supplier:{
+    type: DataTypes.STRING,
+    allowNull:true,
+  },
+  brand:{
+    type: DataTypes.STRING,
+    allowNull:true,
+  },
+  condition:{
+    type:STRING,
+    allowNull:true,
+  },
+  import_date:{
+    type:DataTypes.DATEONLY,
+    allowNull:true,
   },
 }, {
   charset: 'utf8mb4',
@@ -61,6 +90,9 @@ Item.beforeValidate(async (item, options) => {
         break;
       case 'Bakamuna2':
         branchSuffix = 'B2';
+        break;
+      case 'Sample Room':
+        branchSuffix = 'SR';
         break;
       default:
         throw new Error('Unknown branch');

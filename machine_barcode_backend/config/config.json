@@ -2,7 +2,7 @@
   "development": {
     "username": "root",
     "password": "rootNu@123",
-    "database": "barcode_inventory",
+    "database": "asset_scanner",
     "host": "localhost",
     "dialect": "mysql"
   } 
