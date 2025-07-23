@@ -1,7 +1,9 @@
 const Employee = require('../model/employee.js'); // Adjust the path as necessary
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = 'NUIT';
+//const SECRET_KEY = 'NUIT';
+require('dotenv').config(); // Load environment variables
+const SECRET_KEY = process.env.JWT_SECRET;
 
 class EmployeeController {
   // Method to create a new employee
@@ -164,7 +166,7 @@ class EmployeeController {
 
   async login(req, res) {
     const { email, password } = req.query;
-  
+    
     try {
       // Check if the user exists
       const employee = await Employee.findOne({ where: { email } });
@@ -175,6 +177,7 @@ class EmployeeController {
           message: 'Employee not found.',
         });
       }
+      console.log(`Stored Hashed Password: ${employee.password}`); // Log stored password
   
       // Validate the password
       const isPasswordValid = await bcrypt.compare(password, employee.password);
@@ -200,7 +203,9 @@ class EmployeeController {
         token,
         user: {
           email: employee.email,
-          branch: employee.branch, // Assuming 'branch' is a direct column in the Employee table
+          branch: employee.branch,
+          employee_id:employee.employee_id,
+          name:employee.name, // Assuming 'branch' is a direct column in the Employee table
         },
       });
     } catch (error) {
@@ -212,6 +217,44 @@ class EmployeeController {
       });
     }
   }
+
+  async updatePasswordByEmail(req, res) {
+    try {
+      const { email, newPassword } = req.body;
+  
+      // Check if the employee exists
+      const employee = await Employee.findOne({ where: { email } });
+  
+      if (!employee) {
+        return res.status(404).json({
+          success: false,
+          message: 'Employee not found.',
+        });
+      }
+  
+      // Hash the new password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+  
+      console.log(`New Hashed Password: ${hashedPassword}`); // Log hashed password
+  
+      // Update the password
+      employee.password = hashedPassword;
+      await employee.save();
+  
+      res.status(200).json({
+        success: true,
+        message: 'Password updated successfully.',
+      });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error.',
+      });
+    }
+  }
+  
   
 }
 

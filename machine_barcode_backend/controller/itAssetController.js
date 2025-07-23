@@ -1,5 +1,6 @@
 const ITAsset = require('../model/it_asset');
-const { Op } = require('sequelize');
+const { Op, fn, col  } = require('sequelize');
+const { Sequelize } = require('sequelize');
 const ITCategory = require('../model/it_category');
 
 const ITAssetController = {
@@ -211,7 +212,37 @@ const ITAssetController = {
         error: error.message,
       });
     }
+  },
+
+  async getItAssetCountByCategory(req, res) {
+    try {
+      const assetCounts = await ITAsset.findAll({
+        attributes: [
+          'itCategoryId', 
+          [Sequelize.fn('COUNT', Sequelize.col('asset_id')), 'asset_count']
+        ],
+        include: [{
+          model: ITCategory,
+          attributes: ['cat_id', 'cat_name'], // Category details
+          as: 'ITCategory',
+        }],
+        group: ['itCategoryId', 'ITCategory.cat_id', 'ITCategory.cat_name'], // Group by category
+      });
+  
+      if (!assetCounts || assetCounts.length === 0) {
+        return res.status(404).json({ success: false, message: 'No IT assets found' });
+      }
+  
+      res.status(200).json({ success: true, data: assetCounts });
+    } catch (error) {
+      console.error('Error fetching asset count by category:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    }
   }
+
+
+
+  
   
 };
 

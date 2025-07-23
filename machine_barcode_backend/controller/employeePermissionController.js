@@ -52,24 +52,30 @@ class EmployeePermissionController {
   }
 
   // Get EmployeePermission by EMPPID
-  static async getEmployeePermissionById(req, res) {
+  static async getEmployeePermissionsByEmployeeId(req, res) {
     try {
-      const { empPid } = req.params;
-      const empPermission = await EmployeePermission.findByPk(empPid, {
-        include: [
-          { model: Employee, attributes: ['employee_id', 'name', 'email'] },
-          { model: Permission, attributes: ['Perm_id', 'Permission'] }
-        ]
-      });
+        const { employee_id } = req.query;
 
-      if (!empPermission) {
-        return res.status(404).json({ success: false, message: 'Employee Permission not found' });
-      }
+        if (!employee_id) {
+            return res.status(400).json({ success: false, message: 'Employee ID is required' });
+        }
 
-      return res.status(200).json({ success: true, data: empPermission });
+        const empPermissions = await EmployeePermission.findAll({
+            where: { employee_id },
+            include: [
+                { model: Employee, attributes: ['employee_id', 'name', 'email', 'branch', 'designation'] },
+                { model: Permission, attributes: ['Perm_id', 'Permission'] }
+            ]
+        });
+
+        if (!empPermissions || empPermissions.length === 0) {
+            return res.status(200).json({ success: false, message: 'No permissions found for this employee' });
+        }
+
+        return res.status(200).json({ success: true, data: empPermissions });
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ success: false, message: 'Internal server error' });
+        console.error(error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
     }
   }
 
