@@ -1,21 +1,36 @@
 const CategoryPurchaseOrder = require("../model/category_purchaseorder.js");
+const Category = require("../model/category.js");
+
+const sequelize = require("../database");
 
 class CategoryPurchaseOrderController {
-  // Create CategoryPurchaseOrder
+  // Create single CategoryPurchaseOrder
   async createCategoryPurchaseOrder(req, res) {
     try {
       const data = req.body;
 
-      const { PO_id, cat_id, from_date, to_date } = data;
+      const { PO_id, cat_id, Qty, PerDay_Cost, d_percent, from_date, to_date } =
+        data;
+      console.log("Data cat:",data);
+      // Basic validation for required fields
+      if (
+        !PO_id ||
+        !cat_id ||
+        Qty == null ||
+        PerDay_Cost == null ||
+        d_percent == null ||
+        !from_date ||
+        !to_date
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required fields.",
+        });
+      }
 
-      // Validation: Prevent duplicate entry with same PO_id, cat_id, from_date, to_date
+      // Prevent duplicate exact entries
       const existingRecord = await CategoryPurchaseOrder.findOne({
-        where: {
-          PO_id,
-          cat_id,
-          from_date,
-          to_date,
-        },
+        where: { PO_id, cat_id, from_date, to_date },
       });
 
       if (existingRecord) {
@@ -26,7 +41,6 @@ class CategoryPurchaseOrderController {
         });
       }
 
-      // Create new record
       const newCPO = await CategoryPurchaseOrder.create(data);
 
       res.status(201).json({
@@ -36,7 +50,6 @@ class CategoryPurchaseOrderController {
       });
     } catch (error) {
       console.error("Error creating Category Purchase Order:", error);
-
       res.status(500).json({
         success: false,
         message: "Internal server error",
@@ -44,7 +57,83 @@ class CategoryPurchaseOrderController {
     }
   }
 
-  // Get All CategoryPurchaseOrders
+  // Bulk create CategoryPurchaseOrders with transaction and rollback
+  async bulkCreateCategoryPurchaseOrders(req, res) {
+    const t = await sequelize.transaction();
+
+    try {
+      const records = req.body; // Expect array of full CPO objects
+
+      if (!Array.isArray(records) || records.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "No records provided for bulk creation",
+        });
+      }
+
+      for (const data of records) {
+        const {
+          PO_id,
+          cat_id,
+          Qty,
+          PerDay_Cost,
+          d_percent,
+          from_date,
+          to_date,
+        } = data;
+
+        // Basic validation
+        if (
+          !PO_id ||
+          !cat_id ||
+          Qty == null ||
+          PerDay_Cost == null ||
+          d_percent == null ||
+          !from_date ||
+          !to_date
+        ) {
+          await t.rollback();
+          return res.status(400).json({
+            success: false,
+            message: "Missing required fields in one or more records.",
+          });
+        }
+
+        // Check for exact duplicate record
+        const existing = await CategoryPurchaseOrder.findOne({
+          where: { PO_id, cat_id, from_date, to_date },
+          transaction: t,
+        });
+
+        if (existing) {
+          await t.rollback();
+          return res.status(400).json({
+            success: false,
+            message: `Duplicate entry found for PO ID ${PO_id}, Category ID ${cat_id}, Date Range (${from_date} - ${to_date})`,
+          });
+        }
+      }
+
+      // Create all records within the transaction
+      await CategoryPurchaseOrder.bulkCreate(records, { transaction: t });
+
+      await t.commit();
+
+      res.status(201).json({
+        success: true,
+        message: "All Category Purchase Orders created successfully",
+      });
+    } catch (error) {
+      console.error("Error in bulk create:", error);
+      await t.rollback();
+      res.status(500).json({
+        success: false,
+        message: "Internal server error during bulk creation",
+      });
+    }
+  }
+
+  // Get all CategoryPurchaseOrders
   async getAllCategoryPurchaseOrders(req, res) {
     try {
       const cpos = await CategoryPurchaseOrder.findAll();
@@ -144,6 +233,45 @@ class CategoryPurchaseOrderController {
       res
         .status(500)
         .json({ success: false, message: "Internal server error" });
+    }
+  }
+
+  //method to get all catego
+  // Get all CategoryPurchaseOrders by PO ID
+  async getCategoryPurchaseOrdersByPOId(req, res) {
+    try {
+      const { poid } = req.query;
+
+      if (!poid) {
+        return res.status(400).json({
+          success: false,
+          message: "PO ID is required.",
+        });
+      }
+
+      const cpos = await CategoryPurchaseOrder.findAll({
+        where: { PO_id: poid },
+        include: [
+          {
+            model: Category, // include full category model
+          },
+        ],
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `Category Purchase Orders for PO ID ${poid} retrieved successfully`,
+        categoryPurchaseOrders: cpos,
+      });
+    } catch (error) {
+      console.error(
+        "Error retrieving Category Purchase Orders by PO ID:",
+        error
+      );
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
     }
   }
 }

@@ -30,9 +30,7 @@ class SupplierController {
   // Get all Suppliers
   async getAllSuppliers(req, res) {
     try {
-      const suppliers = await Supplier.findAll({
-        attributes: ['supplier_id', 'name', 'address', 'contact'],
-      });
+      const suppliers = await Supplier.findAll();
 
       res.status(200).json({
         success: true,

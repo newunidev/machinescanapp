@@ -53,10 +53,37 @@ const CategoryPurchaseOrder = sequelize.define(
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
+    description: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    
   },
   {
     tableName: "category_purchase_orders",
     timestamps: true,
+    indexes: [
+      {
+        name: "idx_po_id",
+        fields: ["PO_id"],
+      },
+      {
+        name: "idx_cat_id",
+        fields: ["cat_id"],
+      },
+      {
+        name: "idx_from_date",
+        fields: ["from_date"],
+      },
+      {
+        name: "idx_to_date",
+        fields: ["to_date"],
+      },
+      {
+        name: "idx_po_cat",
+        fields: ["PO_id", "cat_id"], // composite index
+      },
+    ],
   }
 );
 

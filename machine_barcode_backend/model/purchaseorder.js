@@ -69,10 +69,36 @@ const PurchaseOrder = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    is_renew_po: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
+    delivery_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    is_vat: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: true,
+    },
+    is_svat: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: true,
+    },
   },
   {
     tableName: "purchase_orders",
     timestamps: true,
+    validate: {
+      vatAndSvatMutuallyExclusive() {
+        if (this.is_vat && this.is_svat) {
+          throw new Error("Both VAT and SVAT cannot be true at the same time.");
+        }
+      },
+    },
   }
 );
 
