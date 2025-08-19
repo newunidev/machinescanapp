@@ -36,6 +36,7 @@ const RentMachineLife = require("./model/rent_machine_life.js");
 const poApproval = require("./model/po_approval.js");
 const Grn = require("./model/grn.js");
 const GrnRentMachine = require("./model/grn_rent_machine.js");
+const POPrintPool = require("./model/po_print_pool.js");
 // Setup GRN-specific associations
 const { setupGRNAssociations } = require("./model/association");
 
@@ -81,6 +82,7 @@ const rentMachineLifeController = require("./controller/rentMachineLifeControlle
 const poApprovalController = require("./controller/poApprovalController.js");
 const grnController = require("./controller/grnController.js");
 const grnRentMachineController = require("./controller/grnRentMachineController.js");
+const poPrintPoolController = require("./controller/poPrintPoolController.js");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -116,6 +118,7 @@ app.get("/categories", CategoryController.getAllCategories);
 app.post("/employees", EmployeeController.createEmployee);
 app.get("/login", EmployeeController.login);
 app.put("/employepswupdate", EmployeeController.updatePasswordByEmail);
+app.get("/employees",EmployeeController.getAllEmployees);
 
 //routing for itemcountScan
 app.get("/itemcountscans", ItemCountScanController.getAllItemCountScans);
@@ -248,7 +251,10 @@ app.get(
   "/employeepermissionsbyemployeid",
   EmployeePermissionController.getEmployeePermissionsByEmployeeId
 );
-
+app.get(
+  "/employeepermissions",
+  EmployeePermissionController.getAllEmployeePermissions
+);
 //END
 
 //start for Rent Machine API calls//
@@ -267,6 +273,7 @@ app.post(
   authenticateToken,
   rentMachineController.createRentMachine
 );
+app.get('/rentmachines-notactive-bybranch',rentMachineController.getNotActiveRentMachinesByBranch);
 
 // //api for rent machine allocation
 // app.post('/rentmachineallocations',rentMachineAllocationController.createAllocation);
@@ -294,6 +301,11 @@ app.post("/purchaseorders", purchaseOrderController.createPurchaseOrder);
 app.get("/purchaseorders", purchaseOrderController.getAllPurchaseOrders);
 app.get("/purchaseordersbyid", purchaseOrderController.getPurchaseOrderById);
 app.put("/purchaseorders-status",purchaseOrderController.updatePurchaseOrder);
+
+//api for popirntPool 
+app.post("/poprintpools",poPrintPoolController.createPoPrintPool);
+app.get("/poprintpools",poPrintPoolController.getAllPoPrintPools);
+app.put("/poprinpools-bypoid",poPrintPoolController.updateByPOId);
 
 //api for category purchase order
 app.post(
@@ -338,10 +350,13 @@ app.put("/po-approvals/approval2", poApprovalController.updateApproval2);
 app.post("/grns",grnController.createGRN);
 app.get("/grns",grnController.getAllGRNs);
 app.get("/grns-rentmachine-cpo-bypoid",grnController.getGRNWithRentMachinesByPOId);
+app.delete("/grnsdeletebyid", grnController.deleteGRN);
 
 //api for grn rent machines
 app.post("/grn-rent-machines",grnRentMachineController.createGRNRentMachine);
+app.post("/grn-rent-machines-bulk",grnRentMachineController.bulkCreateGRNRentMachines);
 app.get("/grn-rent-machines",grnRentMachineController.getAllGRNRentMachines);
+app.get("/grn-rent-machines-byrentid",grnRentMachineController.getGRNRentMachinesByRentItemId);
 
 //end of rent machine module api calles
 setupGRNAssociations();

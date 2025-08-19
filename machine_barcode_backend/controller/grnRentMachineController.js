@@ -2,6 +2,9 @@ const GRN_RentMachine = require("../model/grn_rent_machine");
 const GRN = require("../model/grn");
 const CategoryPurchaseOrder = require("../model/category_purchaseorder");
 const RentMachine = require("../model/rent_machine");
+const PurchaseOrder = require("../model/purchaseorder");
+
+const sequelize = require("../database");
 
 class GRNRentMachineController {
   // Create GRN Rent Machine record
@@ -34,6 +37,70 @@ class GRNRentMachineController {
       res.status(500).json({
         success: false,
         message: "Internal server error",
+      });
+    }
+  }
+
+  // Bulk create GRN Rent Machine records with transaction and rollback
+  async bulkCreateGRNRentMachines(req, res) {
+    try {
+      const records = req.body; // Expect an array of GRN_RentMachine objects
+
+      if (!Array.isArray(records) || records.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "No records provided for bulk creation",
+        });
+      }
+
+      // 1️⃣ Validate required fields & duplicates BEFORE transaction
+      for (const data of records) {
+        const { cpo_id, rent_item_id } = data;
+
+        if (!grn_id || !cpo_id || !rent_item_id) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Missing required fields (grn_id, cpo_id, rent_item_id) in one or more records.",
+          });
+        }
+
+        const existing = await GRN_RentMachine.findOne({
+          where: {cpo_id, rent_item_id },
+        });
+
+        if (existing) {
+          return res.status(400).json({
+            success: false,
+            message: `Duplicate entry found for GRN ID ${grn_id}, CPO ID ${cpo_id}, Rent Item ID ${rent_item_id}`,
+          });
+        }
+      }
+
+      // 2️⃣ Start transaction only for bulkCreate
+      const t = await sequelize.transaction();
+
+      try {
+        await GRN_RentMachine.bulkCreate(records, { transaction: t });
+        await t.commit();
+
+        return res.status(201).json({
+          success: true,
+          message: "All GRN Rent Machine records created successfully",
+        });
+      } catch (bulkError) {
+        await t.rollback();
+        console.error("Error during bulk insert:", bulkError);
+        return res.status(500).json({
+          success: false,
+          message: "Error inserting GRN Rent Machine records",
+        });
+      }
+    } catch (error) {
+      console.error("Error in bulk create GRN Rent Machines:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error during bulk creation",
       });
     }
   }
@@ -149,6 +216,44 @@ class GRNRentMachineController {
       });
     } catch (error) {
       console.error("Error deleting GRN Rent Machine:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  async getGRNRentMachinesByRentItemId(req, res) {
+    try {
+      const { rent_item_id } = req.query;
+
+      const records = await GRN_RentMachine.findAll({
+        where: { rent_item_id },
+        include: [
+          {
+            model: GRN,
+            include: [
+              {
+                model: PurchaseOrder,
+              },
+            ],
+          },
+        ],
+      });
+
+      if (!records || records.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No records found for the given rent_item_id",
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: records,
+      });
+    } catch (error) {
+      console.error("Error fetching GRN_RentMachine records:", error);
       res.status(500).json({
         success: false,
         message: "Internal server error",

@@ -62,13 +62,11 @@ class RentMachineController {
         ],
       });
 
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: "Rent machines retrieved successfully",
-          machines,
-        });
+      res.status(200).json({
+        success: true,
+        message: "Rent machines retrieved successfully",
+        machines,
+      });
     } catch (error) {
       console.error("Error retrieving rent machines:", error);
       res
@@ -90,13 +88,11 @@ class RentMachineController {
         ],
       });
 
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: "Machines by branch retrieved successfully",
-          machines,
-        });
+      res.status(200).json({
+        success: true,
+        message: "Machines by branch retrieved successfully",
+        machines,
+      });
     } catch (error) {
       console.error("Error retrieving by branch:", error);
       res
@@ -124,13 +120,11 @@ class RentMachineController {
           .json({ success: false, message: "Machine not found" });
       }
 
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: "Machine retrieved successfully",
-          machine,
-        });
+      res.status(200).json({
+        success: true,
+        message: "Machine retrieved successfully",
+        machine,
+      });
     } catch (error) {
       console.error("Error retrieving machine:", error);
       res
@@ -155,13 +149,11 @@ class RentMachineController {
 
       await machine.update(updates);
 
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: "Machine updated successfully",
-          machine,
-        });
+      res.status(200).json({
+        success: true,
+        message: "Machine updated successfully",
+        machine,
+      });
     } catch (error) {
       console.error("Error updating rent machine:", error);
       res
@@ -190,13 +182,11 @@ class RentMachineController {
         group: ["RentMachine.cat_id", "Category.cat_id", "Category.cat_name"],
       });
 
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: "Total machines by category retrieved",
-          totals,
-        });
+      res.status(200).json({
+        success: true,
+        message: "Total machines by category retrieved",
+        totals,
+      });
     } catch (error) {
       console.error("Error getting totals:", error);
       res
@@ -216,18 +206,53 @@ class RentMachineController {
         group: ["rented_by"],
       });
 
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: "Total machines by branch retrieved",
-          totals,
-        });
+      res.status(200).json({
+        success: true,
+        message: "Total machines by branch retrieved",
+        totals,
+      });
     } catch (error) {
       console.error("Error getting totals by branch:", error);
       res
         .status(500)
         .json({ success: false, message: "Internal server error" });
+    }
+  }
+
+  // Get Not Active Rent Machines by Branch
+  async getNotActiveRentMachinesByBranch(req, res) {
+    try {
+      const { rented_by } = req.query;
+
+      if (!rented_by) {
+        return res.status(400).json({
+          success: false,
+          message: "Branch (rented_by) is required",
+        });
+      }
+
+      const machines = await RentMachine.findAll({
+        where: {
+          rented_by,
+          isActive: false,
+        },
+        include: [
+          { model: Category, attributes: ["cat_id", "cat_name"] },
+          { model: Supplier, attributes: ["supplier_id", "name"] }, // optional, if needed
+        ],
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Inactive rent machines retrieved successfully",
+        machines,
+      });
+    } catch (error) {
+      console.error("Error retrieving inactive rent machines:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
     }
   }
 }

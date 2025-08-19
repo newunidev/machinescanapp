@@ -9,7 +9,7 @@ const sequelize = new Sequelize({
   host: config.development.host,
   dialect: config.development.dialect, // Corrected typo here
   pool: {
-    max: 5, // Maximum number of connections in the pool
+    max: 10, // Maximum number of connections in the pool
     min: 0, // Minimum number of connections in the pool
     acquire: 30000, // Maximum time (in milliseconds) that pool will try to get connection before throwing error
     idle: 10000 // Maximum time (in milliseconds) that a connection can be idle before being released

@@ -2,9 +2,11 @@ const GRN = require("../model/grn.js");
 const PurchaseOrder = require("../model/purchaseorder.js");
 const Employee = require("../model/employee.js");
 const { Op } = require("sequelize");
-const CategoryPurchaseOrder = require('../model/category_purchaseorder.js');
-const GRN_RentMachine = require('../model/grn_rent_machine.js')
-const RentMachine = require('../model/rent_machine.js');
+const CategoryPurchaseOrder = require("../model/category_purchaseorder.js");
+const GRN_RentMachine = require("../model/grn_rent_machine.js");
+const RentMachine = require("../model/rent_machine.js");
+const Category = require("../model/category.js");
+const Supplier = require("../model/supplier.js");
 
 class GRNController {
   // Create GRN
@@ -130,7 +132,7 @@ class GRNController {
   // Delete GRN by ID
   async deleteGRN(req, res) {
     try {
-      const { id } = req.params;
+      const { id } = req.query;
 
       const grn = await GRN.findByPk(id);
 
@@ -175,6 +177,10 @@ class GRNController {
             include: [
               {
                 model: RentMachine, // to get full RentMachine details
+                include: [
+                  { model: Category, attributes: ["cat_id", "cat_name"] },
+                  { model: Supplier, attributes: ["supplier_id", "name"] },
+                ],
               },
               {
                 model: CategoryPurchaseOrder, // if needed
