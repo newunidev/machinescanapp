@@ -21,7 +21,7 @@ const GRN_RentMachine = sequelize.define(
         key: "grn_id",
       },
       onUpdate: "CASCADE",
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
     },
     cpo_id: {
       type: DataTypes.INTEGER,
@@ -31,7 +31,7 @@ const GRN_RentMachine = sequelize.define(
         key: "cpo_id",
       },
       onUpdate: "CASCADE",
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
     },
     rent_item_id: {
       type: DataTypes.STRING,
@@ -41,7 +41,7 @@ const GRN_RentMachine = sequelize.define(
         key: "rent_item_id",
       },
       onUpdate: "CASCADE",
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
     },
     additional: {
       type: DataTypes.TEXT,

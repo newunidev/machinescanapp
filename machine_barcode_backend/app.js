@@ -7,6 +7,7 @@ const path = require("path");
 require("dotenv").config(); // Load env variables
 const authenticateToken = require("./middleware/authMiddleware");
 
+const Branch = require("./model/branch.js");
 const Category = require("./model/category.js");
 const Item = require("./model/item.js");
 const ItemScan = require("./model/item_scan.js");
@@ -41,7 +42,7 @@ const POPrintPool = require("./model/po_print_pool.js");
 const { setupGRNAssociations } = require("./model/association");
 
 
-
+const BranchController = require("./controller/branchController.js");
 const ItemController = require("./controller/itemController.js");
 const ItemScanController = require("./controller/itemScanController.js");
 const itemScanController = require("./controller/itemScanController.js");
@@ -91,6 +92,11 @@ const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json({ limit: "100mb" }));
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
 
+//routing for branch
+
+app.post("/branches", BranchController.createBranch);
+app.get("/branches", BranchController.getAllBranches);
+
 //routing for Item
 
 app.post("/items", ItemController.createItem);
@@ -119,6 +125,7 @@ app.post("/employees", EmployeeController.createEmployee);
 app.get("/login", EmployeeController.login);
 app.put("/employepswupdate", EmployeeController.updatePasswordByEmail);
 app.get("/employees",EmployeeController.getAllEmployees);
+app.get("/employees-with-branch",EmployeeController.getAllEmployeesWithBranch);
 
 //routing for itemcountScan
 app.get("/itemcountscans", ItemCountScanController.getAllItemCountScans);
@@ -270,10 +277,10 @@ app.get(
 );
 app.post(
   "/rentmachines",
-  authenticateToken,
+  
   rentMachineController.createRentMachine
 );
-app.get('/rentmachines-notactive-bybranch',rentMachineController.getNotActiveRentMachinesByBranch);
+app.get("/rentmachines-avaialable-to-grn",rentMachineController.getMachinesByStatus);
 
 // //api for rent machine allocation
 // app.post('/rentmachineallocations',rentMachineAllocationController.createAllocation);
@@ -301,10 +308,12 @@ app.post("/purchaseorders", purchaseOrderController.createPurchaseOrder);
 app.get("/purchaseorders", purchaseOrderController.getAllPurchaseOrders);
 app.get("/purchaseordersbyid", purchaseOrderController.getPurchaseOrderById);
 app.put("/purchaseorders-status",purchaseOrderController.updatePurchaseOrder);
+app.put("/purchaseorders-entire",purchaseOrderController.updateEntirePurchaseOrder);
 
 //api for popirntPool 
 app.post("/poprintpools",poPrintPoolController.createPoPrintPool);
 app.get("/poprintpools",poPrintPoolController.getAllPoPrintPools);
+app.get("/poprintpoolsbyPoId",poPrintPoolController.getByPOId);
 app.put("/poprinpools-bypoid",poPrintPoolController.updateByPOId);
 
 //api for category purchase order
@@ -320,10 +329,17 @@ app.post(
   "/bulk-category-purchaseorders",
   categoryPurchaseOrderController.bulkCreateCategoryPurchaseOrders
 );
+app.post(
+  "/bulk-category-purchaseorders-update",
+  categoryPurchaseOrderController.bulkCreateAndUpdateCategoryPurchaseOrders
+);
 app.get(
   "/categorypurchaseordersbypoid",
   categoryPurchaseOrderController.getCategoryPurchaseOrdersByPOId
 );
+
+app.delete("/categorypurchaseorders/:id", categoryPurchaseOrderController.deleteCategoryPurchaseOrder);
+app.put("/categorypurchaseorders/:id",categoryPurchaseOrderController.updateCategoryPurchaseOrder);
 
 //api for po renewal machines
 app.post(
@@ -338,6 +354,7 @@ app.get(
 //api for rent machine life time
 app.post("/rentmachinelifetimes", rentMachineLifeController.create);
 app.get("/rentmachinelifetimes", rentMachineLifeController.getAll);
+app.get("/rentmachinesexpired", rentMachineLifeController.getExpiredMachines);
 
 //api for po approvals
 app.post("/poapprovals", poApprovalController.createPOApproval);

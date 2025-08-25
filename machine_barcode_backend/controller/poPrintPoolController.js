@@ -9,21 +9,41 @@ class POPrintPoolController {
     try {
       const { po_id, printed_by } = req.body;
 
-      const newRecord = await POPrintPool.create({
-        po_id,
-        printed_by,
-        first_print: true,
-        print_count: 1,
-        last_print_date: new Date(),
-      });
+      // Check if a record already exists for this PO
+      let record = await POPrintPool.findOne({ where: { po_id } });
 
-      res.status(201).json({
-        success: true,
-        message: "PO Print Pool entry created successfully",
-        data: newRecord,
-      });
+      if (record) {
+        // If exists → update print_count and last_print_date
+        record.print_count += 1;
+        record.last_print_date = new Date();
+        record.first_print = false; // Since it's not the first anymore
+        record.printed_by = printed_by; // Update latest printed_by if needed
+
+        await record.save();
+
+        return res.status(200).json({
+          success: true,
+          message: "PO Print Pool entry updated successfully",
+          data: record,
+        });
+      } else {
+        // If no record exists → create new entry
+        const newRecord = await POPrintPool.create({
+          po_id,
+          printed_by,
+          first_print: true,
+          print_count: 1,
+          last_print_date: new Date(),
+        });
+
+        return res.status(201).json({
+          success: true,
+          message: "PO Print Pool entry created successfully",
+          data: newRecord,
+        });
+      }
     } catch (err) {
-      console.error("Error creating POPrintPool:", err);
+      console.error("Error creating/updating POPrintPool:", err);
       res.status(500).json({ success: false, message: "Server error" });
     }
   }
@@ -52,7 +72,7 @@ class POPrintPoolController {
   // Get by PO ID
   static async getByPOId(req, res) {
     try {
-      const { po_id } = req.params;
+      const { po_id } = req.query;
 
       const record = await POPrintPool.findOne({
         where: { po_id },
@@ -64,7 +84,7 @@ class POPrintPoolController {
 
       if (!record) {
         return res
-          .status(404)
+          .status(200)
           .json({ success: false, message: "Record not found" });
       }
 

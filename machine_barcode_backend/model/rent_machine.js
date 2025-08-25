@@ -15,6 +15,7 @@ const RentMachine = sequelize.define(
     serial_no: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true, // Serial number must be globally unique
     },
     name: {
       type: DataTypes.STRING,
@@ -64,10 +65,17 @@ const RentMachine = sequelize.define(
         key: "supplier_id",
       },
     },
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
+    machine_status: {
+      type: DataTypes.ENUM(
+        "Available To Grn",
+        "Available To Allocation",
+        "In Allocation",
+        "Pending Transfer",
+        "Returned",
+        "In Pending Renew PO"
+      ),
       allowNull: false,
+      defaultValue: "Available To Grn", // You can set the default status as needed
     },
   },
   {
@@ -76,31 +84,27 @@ const RentMachine = sequelize.define(
     indexes: [
       {
         unique: true,
-        fields: ["serial_no", "rented_by"], // Prevent duplicate serial_no for same branch
+        fields: ["serial_no"], // Serial number must be unique
+      },
+      {
+        fields: ["name"], // for faster search by name
+      },
+      {
+        fields: ["cat_id"], // category-based search
+      },
+      {
+        fields: ["sup_id"], // supplier-based search
       },
     ],
   }
 );
 
-// Mapping function for rented_by branch code
-const getBranchCode = (rentedBy) => {
-  const map = {
-    Bakamuna1: "B1",
-    Bakamuna2: "B2",
-    Hettipola: "H",
-    Welioya: "W",
-    Mathara: "M",
-    Piliyandala: "P",
-  };
-  return map[rentedBy] || "X";
-};
-
+// ✅ Generate rent_item_id with global prefix NURENT
 RentMachine.beforeValidate(async (machine, options) => {
-  if (!machine.rent_item_id && machine.serial_no && machine.rented_by) {
-    const branchCode = getBranchCode(machine.rented_by);
-    const prefix = `RENT${branchCode}`;
+  if (!machine.rent_item_id) {
+    const prefix = "NURENT";
 
-    // Find the last rent_item_id that matches this branch prefix
+    // Find last ID with prefix
     const lastRecord = await RentMachine.findOne({
       where: {
         rent_item_id: {
@@ -119,7 +123,7 @@ RentMachine.beforeValidate(async (machine, options) => {
       }
     }
 
-    const paddedNumber = nextNumber.toString().padStart(6, "0");
+    const paddedNumber = nextNumber.toString().padStart(7, "0");
     machine.rent_item_id = `${prefix}${paddedNumber}`;
   }
 });

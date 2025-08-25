@@ -166,6 +166,39 @@ class PurchaseOrderController {
         .json({ success: false, message: "Internal server error" });
     }
   }
+
+  // Update Purchase Order by ID
+  async updateEntirePurchaseOrder(req, res) {
+    try {
+      const { id } = req.query; // Purchase Order ID (poId)
+      const data = req.body; // All fields to update
+
+      // Check if PO exists
+      const purchaseOrder = await PurchaseOrder.findByPk(id);
+
+      if (!purchaseOrder) {
+        return res.status(404).json({
+          success: false,
+          message: "Purchase Order not found",
+        });
+      }
+
+      // Update all provided fields
+      await purchaseOrder.update(data);
+
+      res.status(200).json({
+        success: true,
+        message: "Purchase Order updated successfully",
+        purchaseOrder,
+      });
+    } catch (error) {
+      console.error("Error updating Purchase Order:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
 }
 
 module.exports = new PurchaseOrderController();

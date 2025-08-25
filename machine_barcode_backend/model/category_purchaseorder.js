@@ -21,7 +21,7 @@ const CategoryPurchaseOrder = sequelize.define(
         key: "POID",
       },
       onUpdate: "CASCADE",
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
     },
     cat_id: {
       type: DataTypes.INTEGER,
@@ -31,7 +31,7 @@ const CategoryPurchaseOrder = sequelize.define(
         key: "cat_id",
       },
       onUpdate: "CASCADE",
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
     },
     Qty: {
       type: DataTypes.INTEGER,

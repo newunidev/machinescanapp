@@ -258,6 +258,39 @@ class EmployeeController {
       });
     }
   }
+
+  async getAllEmployeesWithBranch(req, res) {
+    try {
+      const employees = await Employee.findAll({
+        attributes: { exclude: ["password"] }, // Exclude password
+        include: [
+          {
+            model: require("../model/branch"), // Ensure path is correct
+            as: "branchDetails", // Must match the alias defined in association
+            attributes: [
+              "branch_id",
+              "branch_name",
+              "location",
+              "contact_number",
+            ],
+          },
+        ],
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Employees with branch details retrieved successfully.",
+        employees,
+      });
+    } catch (error) {
+      console.error("Error retrieving employees with branch:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error.",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = new EmployeeController();

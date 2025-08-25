@@ -42,6 +42,71 @@ class GRNRentMachineController {
   }
 
   // Bulk create GRN Rent Machine records with transaction and rollback
+  // async bulkCreateGRNRentMachines(req, res) {
+  //   try {
+  //     const records = req.body; // Expect an array of GRN_RentMachine objects
+
+  //     if (!Array.isArray(records) || records.length === 0) {
+  //       return res.status(400).json({
+  //         success: false,
+  //         message: "No records provided for bulk creation",
+  //       });
+  //     }
+
+  //     // 1️⃣ Validate required fields & duplicates BEFORE transaction
+  //     for (const data of records) {
+  //       const { cpo_id, rent_item_id } = data;
+
+  //       if (!grn_id || !cpo_id || !rent_item_id) {
+  //         return res.status(400).json({
+  //           success: false,
+  //           message:
+  //             "Missing required fields (grn_id, cpo_id, rent_item_id) in one or more records.",
+  //         });
+  //       }
+
+  //       const existing = await GRN_RentMachine.findOne({
+  //         where: {cpo_id, rent_item_id },
+  //       });
+
+  //       if (existing) {
+  //         return res.status(400).json({
+  //           success: false,
+  //           message: `Duplicate entry found for GRN ID ${grn_id}, CPO ID ${cpo_id}, Rent Item ID ${rent_item_id}`,
+  //         });
+  //       }
+  //     }
+
+  //     // 2️⃣ Start transaction only for bulkCreate
+  //     const t = await sequelize.transaction();
+
+  //     try {
+  //       await GRN_RentMachine.bulkCreate(records, { transaction: t });
+  //       await t.commit();
+
+  //       return res.status(201).json({
+  //         success: true,
+  //         message: "All GRN Rent Machine records created successfully",
+  //       });
+  //     } catch (bulkError) {
+  //       await t.rollback();
+  //       console.error("Error during bulk insert:", bulkError);
+  //       return res.status(500).json({
+  //         success: false,
+  //         message: "Error inserting GRN Rent Machine records",
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error("Error in bulk create GRN Rent Machines:", error);
+  //     return res.status(500).json({
+  //       success: false,
+  //       message: "Internal server error during bulk creation",
+  //     });
+  //   }
+  // }
+
+  //abobe method is create, the bolow bulk method is create to try update respective rentmachine is getting update its status and the rent_by branch
+
   async bulkCreateGRNRentMachines(req, res) {
     try {
       const records = req.body; // Expect an array of GRN_RentMachine objects
@@ -55,7 +120,7 @@ class GRNRentMachineController {
 
       // 1️⃣ Validate required fields & duplicates BEFORE transaction
       for (const data of records) {
-        const { cpo_id, rent_item_id } = data;
+        const { grn_id, cpo_id, rent_item_id } = data;
 
         if (!grn_id || !cpo_id || !rent_item_id) {
           return res.status(400).json({
@@ -66,7 +131,7 @@ class GRNRentMachineController {
         }
 
         const existing = await GRN_RentMachine.findOne({
-          where: {cpo_id, rent_item_id },
+          where: { cpo_id, rent_item_id },
         });
 
         if (existing) {
@@ -81,12 +146,30 @@ class GRNRentMachineController {
       const t = await sequelize.transaction();
 
       try {
+        // Bulk create GRN_RentMachine records
         await GRN_RentMachine.bulkCreate(records, { transaction: t });
+
+        // Update respective RentMachines
+        for (const data of records) {
+          const { rent_item_id, branch } = data; // make sure branch is in your records
+          await RentMachine.update(
+            {
+              rented_by: branch, // assign branch from record
+              machine_status: "Available To Allocation",
+            },
+            {
+              where: { rent_item_id },
+              transaction: t,
+            }
+          );
+        }
+
         await t.commit();
 
         return res.status(201).json({
           success: true,
-          message: "All GRN Rent Machine records created successfully",
+          message:
+            "All GRN Rent Machine records created successfully and RentMachines updated",
         });
       } catch (bulkError) {
         await t.rollback();
